@@ -42,7 +42,7 @@ fn single_arc() {
 
 fn arc_in_arc() {
     println!("_____________________________________________");
-    println!("TRYING WITH AN ARC IN A ARC PER THREADS");
+    println!("TRYING WITH AN ARC IN A ARC FOR EACH THREADS");
     let value = Arc::new(String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam lacinia a elit eu efficitur. Morbi feugiat, sem et consectetur pharetra, metus orci maximus enim, non tristique elit augue ut ex. Praesent tempus arcu ut lacus molestie, a scelerisque libero bibendum. Curabitur iaculis felis id magna scelerisque, vel ultrices felis laoreet. Phasellus sollicitudin leo at risus."));
     let mut threads = Vec::with_capacity(6);
     let now = std::time::Instant::now();
