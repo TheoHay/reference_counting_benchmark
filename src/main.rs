@@ -1,163 +1,68 @@
-use std::rc::Rc;
-use std::sync::Arc;
-use std::thread;
+#[global_allocator]
+static ALLOC: snmalloc_rs::SnMalloc = snmalloc_rs::SnMalloc;
+
+mod texts;
+use texts::*;
+mod benchmarks;
+pub use benchmarks::*;
+mod tasks;
 
 fn main() {
-    single_arc();
-    arc_in_arc();
-    clone_in_rc();
-    arc_in_rc();
-    with_clone();
+    let args: Vec<String> = std::env::args().collect();
+    let mut thread_count: usize = num_cpus::get();
+    if args.len() == 2 {
+        if let Ok(c) = args[1].parse::<usize>() {
+            thread_count = c;
+        }
+    }
+    benchmark_loop(true, thread_count);
+    benchmark_loop(false, thread_count);
 }
 
-fn single_arc() {
-    println!("_____________________________________________");
-    println!("TRYING WITH SINGLE ARC SHARED BETWEEN THREADS");
-    let value = Arc::new(String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam lacinia a elit eu efficitur. Morbi feugiat, sem et consectetur pharetra, metus orci maximus enim, non tristique elit augue ut ex. Praesent tempus arcu ut lacus molestie, a scelerisque libero bibendum. Curabitur iaculis felis id magna scelerisque, vel ultrices felis laoreet. Phasellus sollicitudin leo at risus."));
-    let mut threads = Vec::with_capacity(6);
-    let now = std::time::Instant::now();
-    for _ in 0..6 {
-        let value = value.clone();
-        threads.push(thread::spawn(move || {
-            for _ in 0..100000 {
-                let _c0 = value.clone();
-                let _c1 = value.clone();
-                let _c2 = value.clone();
-                let _c3 = value.clone();
-                let _c4 = value.clone();
-                let _c5 = value.clone();
-                let _c6 = value.clone();
-                let _c7 = value.clone();
-                let _c8 = value.clone();
-                let _c9 = value.clone();
-            }
-        }));
+fn benchmark_loop(warmup: bool, thread_count: usize) {
+    if !warmup {
+        println!();
     }
-    for th in threads {
-        th.join().unwrap();
-    }
-    println!("{} microseconds", now.elapsed().as_micros());
-    println!("_____________________________________________");
-}
 
-fn arc_in_arc() {
-    println!("_____________________________________________");
-    println!("TRYING WITH AN ARC IN A ARC FOR EACH THREADS");
-    let value = Arc::new(String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam lacinia a elit eu efficitur. Morbi feugiat, sem et consectetur pharetra, metus orci maximus enim, non tristique elit augue ut ex. Praesent tempus arcu ut lacus molestie, a scelerisque libero bibendum. Curabitur iaculis felis id magna scelerisque, vel ultrices felis laoreet. Phasellus sollicitudin leo at risus."));
-    let mut threads = Vec::with_capacity(6);
-    let now = std::time::Instant::now();
-    for _ in 0..6 {
-        let value = Arc::new(value.clone());
-        threads.push(thread::spawn(move || {
-            for _ in 0..100000 {
-                let _c0 = value.clone();
-                let _c1 = value.clone();
-                let _c2 = value.clone();
-                let _c3 = value.clone();
-                let _c4 = value.clone();
-                let _c5 = value.clone();
-                let _c6 = value.clone();
-                let _c7 = value.clone();
-                let _c8 = value.clone();
-                let _c9 = value.clone();
-            }
-        }));
+    arc_single(ObjectSize::Small, warmup, thread_count);
+    arc_single(ObjectSize::Medium, warmup, thread_count);
+    arc_single(ObjectSize::Big, warmup, thread_count);
+    if !warmup {
+        println!();
     }
-    for th in threads {
-        th.join().unwrap();
-    }
-    println!("{} microseconds", now.elapsed().as_micros());
-    println!("_____________________________________________");
-}
 
-fn clone_in_rc() {
-    println!("_____________________________________________");
-    println!("TRYING BY CLONING INTO AN RC FOR EACH THREADS");
-    let value = String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam lacinia a elit eu efficitur. Morbi feugiat, sem et consectetur pharetra, metus orci maximus enim, non tristique elit augue ut ex. Praesent tempus arcu ut lacus molestie, a scelerisque libero bibendum. Curabitur iaculis felis id magna scelerisque, vel ultrices felis laoreet. Phasellus sollicitudin leo at risus.");
-    let mut threads = Vec::with_capacity(6);
-    let now = std::time::Instant::now();
-    for _ in 0..6 {
-        let value = value.clone();
-        threads.push(thread::spawn(move || {
-            let value = Rc::new(value);
-            for _ in 0..100000 {
-                let _c0 = value.clone();
-                let _c1 = value.clone();
-                let _c2 = value.clone();
-                let _c3 = value.clone();
-                let _c4 = value.clone();
-                let _c5 = value.clone();
-                let _c6 = value.clone();
-                let _c7 = value.clone();
-                let _c8 = value.clone();
-                let _c9 = value.clone();
-            }
-        }));
+    clone_into_arc(ObjectSize::Small, warmup, thread_count);
+    clone_into_arc(ObjectSize::Medium, warmup, thread_count);
+    clone_into_arc(ObjectSize::Big, warmup, thread_count);
+    if !warmup {
+        println!();
     }
-    for th in threads {
-        th.join().unwrap();
-    }
-    println!("{} microseconds", now.elapsed().as_micros());
-    println!("_____________________________________________");
-}
 
-fn arc_in_rc() {
-    println!("_____________________________________________");
-    println!("TRYING BY CLONING AN ARC INTO AN RC FOR EACH THREADS");
-    let value = Arc::new(String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam lacinia a elit eu efficitur. Morbi feugiat, sem et consectetur pharetra, metus orci maximus enim, non tristique elit augue ut ex. Praesent tempus arcu ut lacus molestie, a scelerisque libero bibendum. Curabitur iaculis felis id magna scelerisque, vel ultrices felis laoreet. Phasellus sollicitudin leo at risus."));
-    let mut threads = Vec::with_capacity(6);
-    let now = std::time::Instant::now();
-    for _ in 0..6 {
-        let value = value.clone();
-        threads.push(thread::spawn(move || {
-            let value = Rc::new(value);
-            for _ in 0..100000 {
-                let _c0 = value.clone();
-                let _c1 = value.clone();
-                let _c2 = value.clone();
-                let _c3 = value.clone();
-                let _c4 = value.clone();
-                let _c5 = value.clone();
-                let _c6 = value.clone();
-                let _c7 = value.clone();
-                let _c8 = value.clone();
-                let _c9 = value.clone();
-            }
-        }));
+    arc_into_arc(ObjectSize::Small, warmup, thread_count);
+    arc_into_arc(ObjectSize::Medium, warmup, thread_count);
+    arc_into_arc(ObjectSize::Big, warmup, thread_count);
+    if !warmup {
+        println!();
     }
-    for th in threads {
-        th.join().unwrap();
-    }
-    println!("{} microseconds", now.elapsed().as_micros());
-    println!("_____________________________________________");
-}
 
-fn with_clone() {
-    println!("_____________________________________________");
-    println!("TRYING BY CLONING THE STRING");
-    let value = String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam lacinia a elit eu efficitur. Morbi feugiat, sem et consectetur pharetra, metus orci maximus enim, non tristique elit augue ut ex. Praesent tempus arcu ut lacus molestie, a scelerisque libero bibendum. Curabitur iaculis felis id magna scelerisque, vel ultrices felis laoreet. Phasellus sollicitudin leo at risus.");
-    let mut threads = Vec::with_capacity(6);
-    let now = std::time::Instant::now();
-    for _ in 0..6 {
-        let value = value.clone();
-        threads.push(thread::spawn(move || {
-            for _ in 0..100000 {
-                let _c0 = value.clone();
-                let _c1 = value.clone();
-                let _c2 = value.clone();
-                let _c3 = value.clone();
-                let _c4 = value.clone();
-                let _c5 = value.clone();
-                let _c6 = value.clone();
-                let _c7 = value.clone();
-                let _c8 = value.clone();
-                let _c9 = value.clone();
-            }
-        }));
+    arc_into_rc(ObjectSize::Small, warmup, thread_count);
+    arc_into_rc(ObjectSize::Medium, warmup, thread_count);
+    arc_into_rc(ObjectSize::Big, warmup, thread_count);
+    if !warmup {
+        println!();
     }
-    for th in threads {
-        th.join().unwrap();
+
+    clone_into_rc(ObjectSize::Small, warmup, thread_count);
+    clone_into_rc(ObjectSize::Medium, warmup, thread_count);
+    clone_into_rc(ObjectSize::Big, warmup, thread_count);
+    if !warmup {
+        println!();
     }
-    println!("{} microseconds", now.elapsed().as_micros());
-    println!("_____________________________________________");
+
+    cloning(ObjectSize::Small, warmup, thread_count);
+    cloning(ObjectSize::Medium, warmup, thread_count);
+    cloning(ObjectSize::Big, warmup, thread_count);
+    if !warmup {
+        println!();
+    }
 }
