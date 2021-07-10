@@ -1,7 +1,7 @@
 # reference_counting_benchmark
-A simple benchmark to demonstrate the cost of an atomic operation
+A simple benchmark to demonstrate the cost of reference/object sharing and cloning
 
-Here is my results using Intel Core i7 8750H under Windows 10 :
+Here is my results using Intel Core i7 8750H under Windows 11 :
 
 -------------------
 Single shared Arc with Small Object took 455,808 μs
